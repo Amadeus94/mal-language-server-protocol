@@ -1,0 +1,427 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "MAL",
+	"scopeName": "source.mal",
+	"patterns": [
+		{
+			"begin": "\\b(include)\\b\\s*",
+			"beginCaptures": {
+				"1": { "name": "keyword.other.include.mal" },
+				"2": { "name": "storage.modifier.mal" }
+			},
+			"end": "\\n",
+			"name": "meta.include.mal",
+			"contentName": "storage.modifier.include.mal",
+			"patterns": [
+				{ "include": "#comments" },
+				{ "include": "#strings" }
+			]
+		},
+		{
+			"begin": "(\\#)(\\w+):",
+			"beginCaptures": {
+				"1": { "name": "keyword.other.symbol.define-start.mal"	},
+				"2": { "name": "entity.name.tag.define.key.mal" }
+			},
+			"end": "(\\n)",
+			"name": "meta.define.mal",
+			"contentName": "storage.modifier.define.mal",
+			"patterns": [
+				{	"include": "#comments" },
+				{	"include": "#strings" }
+			]
+		},
+		{
+			"begin": "\\b(associations)\\b",
+			"beginCaptures": {
+				"1": { "name": "keyword.other.associations.mal"	}
+			},
+			"end": "}",
+			"endCaptures": {
+				"0": { "name": "punctuation.section.associations.end.bracket.curly.mal" }
+			},
+			"name": "meta.associations.mal",
+			"patterns": [
+				{ "include": "#association-body" },
+				{	"include": "#comments" },
+				{	"include": "#storage"	}
+			]
+		},
+		{ "include": "#category" },
+		{ "include": "#comments" },
+		{ "include": "#informations" },
+		{ "include": "#set-operations" },
+		{ "include": "#strings" },
+		{ "include": "#type-of" }
+	],
+	"repository": {
+		"abstract-asset": {
+			"begin": "\\b(abstract)\\b\\s*\\b(asset)\\b\\s*(\\w+)",
+			"beginCaptures": {
+				"1": { "name": "storage.modifier.abstract.mal" },
+				"2": { "name": "storage.modifier.asset.mal"	},
+				"3": { "name": "entity.name.type.asset.mal"	}
+			},
+			"end": "}",
+			"endCaptures": {
+				"0": { "name": "punctuation.section.asset.end.bracket.curly.mal" }
+			},
+			"patterns": [
+				{ "include": "#asset-extends" },
+				{ "include": "#attack-step" },
+				{ "include": "#attack-step-body" },
+				{ "include": "#comments" },
+				{ "include": "#definitions" },
+				{ "include": "#informations" }
+			]
+		},
+		"asset": {
+			"begin": "\\b(asset)\\b\\s*(\\w+)",
+			"beginCaptures": {
+				"1": { "name": "storage.modifier.asset.mal"	},
+				"2": { "name": "entity.name.type.asset.mal"	}
+			},
+			"end": "}",
+			"endCaptures": {
+				"0": { "name": "punctuation.section.asset.end.bracket.curly.mal" }
+			},
+			"patterns": [
+				{ "include": "#asset-extends" },
+				{ "include": "#attack-step" },
+				{ "include": "#attack-step-body" },
+				{ "include": "#comments" },
+				{ "include": "#definitions" },
+				{ "include": "#informations" }
+			]
+		},
+		"asset-extends": {
+			"match": "\\b(extends)\\b\\s*(\\w+)",
+			"captures": {
+				"1": { "name": "storage.modifier.asset.mal"	},
+				"2": { "name": "entity.name.type.asset.mal"	},
+				"3": { "name": "storage.modifier.extends.mal" },
+				"4": { "name": "entity.name.type.asset.mal" }
+			},
+			"patterns": [
+				{ "include": "#attack-step" },
+				{ "include": "#attack-step-body" },
+				{ "include": "#comments" },
+				{ "include": "#definitions" },
+				{ "include": "#informations" }
+			]
+		},
+		"association-body": {
+			"patterns": [
+				{
+					"match": "(\\w+)\\s*(\\[)(\\w+)(\\])\\s*([1|0..1|*])\\s*",
+					"name": "meta.association.body.left.mal",
+					"captures": {
+						"1": { "name": "entity.name.type.asset.association.mal"	},
+						"2": { "name": "punctuation.section.begin.bracket.mal" },
+						"3": { "name": "entity.name.function.attackstep.association.mal" },
+						"4": { "name": "punctuation.section.end.bracket.mal" },
+						"5": { "name": "constant.numeric.mal"	}
+					}
+				},
+				{
+					"begin": "(<--)\\s*(\\w+)",
+					"beginCaptures": {
+						"1": { "name": "markup.heading.association.start.mal"	},
+						"2": { "name": "entity.other.association.mal"	}
+					},
+					"end": "-->",
+					"endCaptures": {
+						"0": { "name": "markup.heading.association.end.mal"	}
+					},
+					"name": "meta.association.body.middle.mal"
+				},
+				{
+					"match": "([1|0..1|*])\\s*\\s*(\\[)(\\w+)(\\])\\s*(\\w+)",
+					"name": "meta.association.body.right.mal",
+					"captures": {
+						"1": { "name": "constant.numeric.mal" },
+						"2": { "name": "punctuation.section.begin.bracket.mal" },
+						"3": { "name": "entity.name.function.attackstep.association.mal" },
+						"4": { "name": "punctuation.section.end.bracket.mal" },
+						"5": { "name": "entity.name.type.asset.association.mal"	}
+					}
+				}
+			]
+		},
+		"attack-step": {
+			"begin": "(\\#|E|\\!E|&|\\|)\\s*(\\w+)",
+			"beginCaptures": {
+				"1": { "name": "keyword.control.attckstep.mal" },
+				"2": { "name": "entity.name.function.attackstep.mal" }
+			},
+			"end": "\\n",
+			"name": "meta.attackstep.mal",
+			"patterns": [
+				{ "include": "#comments" },
+				{ "include": "#distributions" },
+				{ "include": "#informations" },
+				{ "include": "#keywords" },
+				{ "include": "#set-operations" },
+				{ "include": "#type-of" }
+			]
+		},
+		"attack-step-body": {
+			"begin": "(->|<-)\\s*(\\w+)",
+			"beginCaptures": {
+				"1": { "name": "keyword.operator.attackstep.operators.mal" },
+				"2": { "name": "variable.other.attackstep.mal" }
+			},
+			"end": "\n",
+			"name": "meta.attackstep.body.mal",
+			"patterns": [
+				{ "include": "#comments" },
+				{ "include": "#informations" },
+				{ "include": "#keywords" },
+				{ "include": "#set-operations" },
+				{ "include": "#type-of" }
+			]
+		},
+		"category": {
+			"begin": "\\b(category)\\b\\s*(\\w+)",
+			"beginCaptures": {
+				"1": { "name": "storage.type.category.mal" },
+				"2": { "name": "entity.name.section.category.mal"	}
+			},
+			"end": "}",
+			"endCaptures": {
+				"0": { "name": "punctuation.section.category.end.bracket.curly.mal"	}
+			},
+			"name": "meta.category.mal",
+			"patterns": [
+				{ "include": "#abstract-asset" },
+				{ "include": "#asset" },
+				{ "include": "#comments" },
+				{ "include": "#informations" },
+				{ "include": "#strings" },
+				{ "include": "#type-of" }
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.double-slash.mal",
+					"begin": "//",
+					"end": "\\n"
+				},
+				{
+					"name": "comment.block.empty.mal",
+					"match": "/\\*\\*/"
+				},
+				{
+					"name": "comment.block.mal",
+					"begin": "/\\*",
+					"end": "\\*/"
+				}
+			]
+		},
+		"definitions":{
+			"begin": "\\b(let)\\b\\s*(\\w+)\\s*(=)",
+			"captures": {
+				"1": { "name": "storage.type.let.mal"	},
+				"2": { "name": "variable.other.definition.mal" },
+				"3": { "name": "keyword.operator.assignment.mal" }
+			},
+			"end": "\\s",
+			"name": "meta.definition.mal",
+			"patterns": [
+				{ "include": "#comments" },
+				{	"include": "#keywords" },
+				{ "include": "#set-operations" }
+			]
+		},
+		"distributions": {
+			"patterns": [
+				{
+					"name": "constant.language.distribution.bernoulli.mal",
+					"match": "\\b(Bernoulli)\\b"
+				},
+				{
+					"name": "constant.language.distribution.exponential.mal",
+					"match": "\\b(Exponential)\\b"
+				},
+				{
+					"name": "constant.language.distribution.log-normal.mal",
+					"match": "\\b(LogNormal)\\b"
+				},
+				{
+					"name": "constant.language.distribution.pareto.mal",
+					"match": "\\b(Pareto)\\b"
+				},
+				{
+					"name": "constant.language.distribution.truncated-normal.mal",
+					"match": "\\b(TruncatedNormal)\\b"
+				},
+				{
+					"name": "constant.language.distribution.uniform.mal",
+					"match": "\\b(Uniform)\\b"
+				}
+			]
+		},
+		"informations": {
+			"patterns": [
+				{
+					"begin": "\\b(developer info)\\b\\s*",
+					"captures": {
+						"1": { "name": "keyword.other.info.developer.mal"	}
+					},
+					"end": "\\n",
+					"name": "meta.info.developer.mal",
+					"patterns": [
+						{	"include": "#keywords" },
+						{ "include": "#strings" }
+					]
+				},
+				{
+					"begin": "\\b(modeler info)\\b\\s*",
+					"captures": {
+						"1": { "name": "keyword.other.info.modeler.mal"	}
+					},
+					"end": "\\n",
+					"name": "meta.info.modeler.mal",
+					"patterns": [
+						{	"include": "#keywords" },
+						{ "include": "#strings" }
+					]
+				},
+				{
+					"begin": "\\b(user info)\\b\\s*",
+					"captures": {
+						"1": { "name": "keyword.other.info.user.mal"	}
+					},
+					"end": "\\n",
+					"name": "meta.info.user.mal",
+					"patterns": [
+						{	"include": "#keywords" },
+						{ "include": "#strings" }
+					]
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.other.info.mal",
+					"match": "\\b(modeler info|user info|developer info|TTC)\\b"
+				},
+				{
+					"name": "keyword.control.attackstep.mal",
+					"match": "(\\#|E|!E|&|\\|)"
+				},
+				{
+					"name": "keyword.operator.attackstep.operators.mal",
+					"match": "(->|<-|\\+>)"
+				},
+				{
+					"name": "keyword.operator.union.mal",
+					"match": "(\\\\/)"
+				},
+				{
+					"name": "keyword.operator.intersection.mal",
+					"match": "(/\\\\)"
+				}
+			]
+		},
+		"set-operations": {
+			"begin": "(\\w+)\\s*(\\\\/|/\\\\)\\s*(\\w+)",
+			"captures": {
+				"1": { "name": "variable.other.definition.mal"	},
+				"2": { "name": "keyword.operator.set.operator.mal" },
+				"3": { "name": "variable.other.definition.mal" }
+			},
+			"end": "\\n",
+			"name": "meta.set.operation.mal",
+			"patterns": [
+				{ "include": "#comments" },
+				{	"include": "#keywords" },
+				{ "include": "#type-of" }
+			]
+		},
+		"storage": {
+			"patterns": [
+				{
+					"name": "storage.type.category.mal",
+					"match": "\\b(category)\\b"
+				},
+				{
+					"name": "storage.type.let.mal",
+					"match": "\\b(let)\\b"
+				},
+				{
+					"name": "storage.type.include.mal",
+					"match": "\\b(include)\\b"
+				},
+				{
+					"name": "storage.type.associations.mal",
+					"match": "\\b(associations)\\b"
+				}
+			]
+		},
+		"storage-modifiers": {
+			"patterns": [
+				{
+					"name": "storage.modifier.abstract.mal",
+					"match": "\\b(abstract)\\b"
+				},
+				{
+					"name": "storage.modifier.asset.mal",
+					"match": "\\b(asset)\\b"
+				},
+				{
+					"name": "storage.modifier.extends.mal",
+					"match": "\\b(extends)\\b"
+				}
+			]
+		},
+		"strings": {
+			"begin": "\"",
+			"beginCaptures": {
+				"0": { "name": "punctuation.definition.string.begin.mal" }
+			},
+			"end": "\"",
+			"endCaptures": {
+				"0": { "name": "punctuation.definition.string.end.mal" }
+			},
+			"name": "string.quoted.double.mal",
+			"patterns": [
+				{
+					"match": "\\\\.",
+					"name": "constant.character.escape.mal"
+				}
+			]
+		},
+		"type-of": {
+			"patterns": [
+				{
+					"begin": "(\\w+)\\[(\\w+)\\].(\\w+)",
+					"captures": {
+						"1": { "name": "entity.name.type.asset.mal" },
+						"2": { "name": "entity.name.type.section.sub-class.mal" },
+						"3": { "name": "entity.name.function.attackstep.mal" }
+					},
+					"end": "\\n|\\t|\\s",	
+					"name": "meta.type-of.mal",
+					"patterns": [
+						{ "include": "#comments" }
+					]
+				},
+				{
+					"begin": "(\\w+)\\[(\\w+)\\]",
+					"captures": {
+						"1": { "name": "entity.name.type.asset.mal" },
+						"2": { "name": "entity.name.type.sub-class.mal" }
+					},
+					"end": "\\n|\\t|\\s",
+					"name": "meta.type-of.mal",
+					"patterns": [
+						{ "include": "#comments" }
+					]
+				}
+			]
+		}
+	}
+}
