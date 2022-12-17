@@ -7,11 +7,13 @@ import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
+import org.mal.ls.utils.ServerInitUtils;
 
 public class MalLanguageServer implements LanguageServer, LanguageClientAware {
   private TextDocumentService textDocumentService;
@@ -26,6 +28,8 @@ public class MalLanguageServer implements LanguageServer, LanguageClientAware {
 
   @Override
   public CompletableFuture<InitializeResult> initialize(InitializeParams initializeParams) {
+    // register utility
+    //ServerInitUtils utils = new  ServerInitUtils();; 
     final InitializeResult initializeResult = new InitializeResult(new ServerCapabilities());
 
     initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
@@ -33,6 +37,18 @@ public class MalLanguageServer implements LanguageServer, LanguageClientAware {
     initializeResult.getCapabilities().setCompletionProvider(completionOptions);
     initializeResult.getCapabilities().setDefinitionProvider(Boolean.TRUE);
     initializeResult.getCapabilities().setDocumentFormattingProvider(Boolean.TRUE);
+
+    // Rename Options
+    //RenameOptions renameOptions = new RenameOptions();
+    //renameOptions.setPrepareProvider(true); // not sure if should include
+    //initializeResult.getCapabilities().setRenameProvider(renameOptions);
+
+    // Register Hover
+    initializeResult.getCapabilities().setHoverProvider(Either.forRight(ServerInitUtils.getHoverOptions()));
+      // What does Either.forRight do? 
+
+
+
     return CompletableFuture.supplyAsync(() -> initializeResult);
   }
 

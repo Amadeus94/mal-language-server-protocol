@@ -43,11 +43,12 @@ import org.mal.ls.compiler.lib.AST;
 import org.mal.ls.compiler.lib.CompilerException;
 import org.mal.ls.compiler.lib.MalDiagnosticLogger;
 import org.mal.ls.compiler.lib.Parser;
-import org.mal.ls.context.LanguageServerContextImpl;
 import org.mal.ls.context.ContextKeys;
 import org.mal.ls.context.DocumentManager;
 import org.mal.ls.context.DocumentManagerImpl;
 import org.mal.ls.context.LanguageServerContext;
+import org.mal.ls.context.LanguageServerContextImpl;
+import org.mal.ls.features.hover.HoverProvider;
 import org.mal.ls.handler.CompletionItemsHandler;
 import org.mal.ls.handler.DefinitionHandler;
 import org.mal.ls.handler.DiagnosticHandler;
@@ -92,7 +93,13 @@ public class MalTextDocumentService implements TextDocumentService {
 
   @Override
   public CompletableFuture<Hover> hover(HoverParams params) {
-    return null;
+            return CompletableFuture.supplyAsync(() -> {
+            try {
+                return HoverProvider.getHover("key", "value");
+            } catch (Throwable e) {
+                return null;
+            }
+        });
   }
 
   @Override
