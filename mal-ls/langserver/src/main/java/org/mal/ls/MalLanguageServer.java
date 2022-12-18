@@ -47,8 +47,6 @@ public class MalLanguageServer implements LanguageServer, LanguageClientAware {
     initializeResult.getCapabilities().setHoverProvider(Either.forRight(ServerInitUtils.getHoverOptions()));
       // What does Either.forRight do? 
 
-
-
     return CompletableFuture.supplyAsync(() -> initializeResult);
   }
 

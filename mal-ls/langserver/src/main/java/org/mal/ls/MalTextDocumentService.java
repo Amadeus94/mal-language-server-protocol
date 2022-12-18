@@ -3,6 +3,7 @@ package org.mal.ls;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -28,8 +29,11 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
+import org.eclipse.lsp4j.MarkupContent;
+import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.MessageType;
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SignatureHelp;
@@ -42,21 +46,24 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.mal.ls.compiler.lib.AST;
 import org.mal.ls.compiler.lib.CompilerException;
 import org.mal.ls.compiler.lib.MalDiagnosticLogger;
+import org.mal.ls.compiler.lib.MalLocation;
 import org.mal.ls.compiler.lib.Parser;
 import org.mal.ls.context.ContextKeys;
 import org.mal.ls.context.DocumentManager;
 import org.mal.ls.context.DocumentManagerImpl;
 import org.mal.ls.context.LanguageServerContext;
 import org.mal.ls.context.LanguageServerContextImpl;
-import org.mal.ls.features.hover.HoverProvider;
 import org.mal.ls.handler.CompletionItemsHandler;
 import org.mal.ls.handler.DefinitionHandler;
 import org.mal.ls.handler.DiagnosticHandler;
 import org.mal.ls.handler.FormatHandler;
+import org.mal.serverApi.api.context.LSContext;
+import org.mal.serverCore.core.MalLSContext;
 
 public class MalTextDocumentService implements TextDocumentService {
   private final MalLanguageServer server;
   private final LanguageServerContext context;
+  private final LSContext malContext; // new
   private final DocumentManager documentManager;
   private final CompletionItemsHandler ciHandler;
   private final DefinitionHandler defHandler;
@@ -71,6 +78,7 @@ public class MalTextDocumentService implements TextDocumentService {
     this.defHandler = new DefinitionHandler();
     this.diagnosticHandler = new DiagnosticHandler();
     this.formatHandler = new FormatHandler();
+    this.malContext = new MalLSContext();
   }
 
   /**
@@ -91,16 +99,66 @@ public class MalTextDocumentService implements TextDocumentService {
     return null;
   }
 
+  /**
+   * The cleint sends the HoverParams data moedl as input parameters
+   * 
+   * The server can extract the document URI and Position enclosed wit hthe TextDocumentPositionParams
+   * 
+   * In this implementation:
+   * 1. We use the document URI to isolate and obtain the SEMANTIC MODEL
+   *      to extracthe the SYMBOL-information at the given CURSOR POSITION
+   * 
+   * As a result: The 'textDocument/Hover'-request, the server sends a Hover-response data model
+   * 
+   * The server can specify the associated information about the symbol with the contents field set
+   * 
+   * Notice: The contents field can either be a 'MarkedString', 'MarkedString[]' or 'MarkupContent'
+   *      // MarkedString structure has been deprecated
+   * 
+   * 
+   * Finally: Hover Data structure also contains a Range field
+   *    - it specifies the associated region of the hover information
+   *      - This range calculation can be different from one programming language to another based on the syntax and semantic representations
+   *      - And also the client can interpret the range to highlight the hover range as per the client's desire
+   * 
+   */
   @Override
   public CompletableFuture<Hover> hover(HoverParams params) {
-            return CompletableFuture.supplyAsync(() -> {
-            try {
-                return HoverProvider.getHover("key", "value");
-            } catch (Throwable e) {
-                return null;
-            }
-        });
-  }
+        return CompletableFuture.supplyAsync(() -> {
+      try {
+Hover hover = new  Hover();
+    context.put(ContextKeys.URI_KEY, params.getTextDocument().getUri());
+
+    AST ast = context.get(ContextKeys.AST_KEY);
+    Position pos = params.getPosition();
+
+    String result = "N/A";
+
+    for(var item: ast.getCategories()){
+      //for(var jtems: item.)
+    }
+
+    //iterate and check position
+
+    // 3 step to fix
+    //  get astring to print to hover
+    // get the object to string 
+
+    //get to print something
+    MarkupContent content = new MarkupContent();
+    content.setKind(MarkupKind.MARKDOWN);
+    content.setValue("N/A");
+    hover.setContents(content);
+
+
+
+            return hover;
+          } catch (Throwable e) {
+            return null;
+        }
+     });
+}
+
 
   @Override
   public CompletableFuture<SignatureHelp> signatureHelp(SignatureHelpParams params) {
@@ -109,6 +167,22 @@ public class MalTextDocumentService implements TextDocumentService {
 
   /**
    * Identifies token for location and returns location were token is initlized
+   * 'textDocument/-definition"-request
+   * 
+   * Step 1: Identify which token the user has executed the go to definition on
+   * 
+   * 
+   * The position of where the user has the cursor when the function is called is included as a parameter to the "textDocument/-definition"-request
+   *  - along with a locally saved syntax tree of the current file along with its included files, 
+   *    the language server examines whether the cursor position either falls for an 
+   *      association-referenced asset, a Leads to, or a Requires.
+   *      - If this is not the case, the return value is set to an empty list.
+   *      - However, if the cursor position falls into any of the three aforementioned locations
+   *          the token name is saved and checked against various category, asset, attack step, and let variables names from the saved syntax tree
+   *           th server responds with a list of positiosn that match the previously token name. 
+   * 
+   * 
+   * 
    */
   @Override
   public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(
