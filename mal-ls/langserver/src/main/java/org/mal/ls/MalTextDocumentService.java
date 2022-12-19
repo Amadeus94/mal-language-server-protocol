@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.CodeAction;
@@ -34,6 +35,7 @@ import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SignatureHelp;
@@ -46,13 +48,14 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.mal.ls.compiler.lib.AST;
 import org.mal.ls.compiler.lib.CompilerException;
 import org.mal.ls.compiler.lib.MalDiagnosticLogger;
-import org.mal.ls.compiler.lib.MalLocation;
 import org.mal.ls.compiler.lib.Parser;
 import org.mal.ls.context.ContextKeys;
 import org.mal.ls.context.DocumentManager;
 import org.mal.ls.context.DocumentManagerImpl;
 import org.mal.ls.context.LanguageServerContext;
 import org.mal.ls.context.LanguageServerContextImpl;
+import org.mal.ls.features.hover.HoverModel;
+import org.mal.ls.features.hover.HoverProvider;
 import org.mal.ls.handler.CompletionItemsHandler;
 import org.mal.ls.handler.DefinitionHandler;
 import org.mal.ls.handler.DiagnosticHandler;
@@ -102,32 +105,18 @@ public class MalTextDocumentService implements TextDocumentService {
     }
 
     /**
-     * The cleint sends the HoverParams data moedl as input parameters
+     * 'textDocument/hover'-request  
+     * The client sends the HoverParams data model as input parameters
      *
-     * The server can extract the document URI and Position enclosed wit hthe
-     * TextDocumentPositionParams
+     * The server can extract the document 
+     *      URI and Position enclosed with the TextDocumentPositionParams
      *
-     * In this implementation: 1. We use the document URI to isolate and obtain
-     * the SEMANTIC MODEL to extracthe the SYMBOL-information at the given
-     * CURSOR POSITION
-     *
-     * As a result: The 'textDocument/Hover'-request, the server sends a
-     * Hover-response data model
-     *
-     * The server can specify the associated information about the symbol with
-     * the contents field set
-     *
-     * Notice: The contents field can either be a 'MarkedString',
-     * 'MarkedString[]' or 'MarkupContent' // MarkedString structure has been
-     * deprecated
-     *
-     *
-     * Finally: Hover Data structure also contains a Range field - it specifies
-     * the associated region of the hover information - This range calculation
-     * can be different from one programming language to another based on the
-     * syntax and semantic representations - And also the client can interpret
-     * the range to highlight the hover range as per the client's desire
-     *
+     * The server responds with a hover-response data model
+     * 
+     *  1. Use the document URI to isolate and obtain the SEMANTIC MODEL to extrac the the SYMBOL-information at the given CURSOR POSITION
+     * 
+     *Notice: The contents field can either be a 
+     *  - 'MarkedString','MarkedString[]' or 'MarkupContent' // MarkedString structure has been deprecated
      */
     @Override
     public CompletableFuture<Hover> hover(HoverParams params) {
@@ -137,29 +126,41 @@ public class MalTextDocumentService implements TextDocumentService {
                 context.put(ContextKeys.URI_KEY, params.getTextDocument().getUri());
 
                 AST ast = context.get(ContextKeys.AST_KEY);
-                Position pos = params.getPosition();
 
-                String result = params.getPosition().toString();
+                //1: Fill
+                List<HoverModel> list = HoverProvider.fillItemsList(ast);
 
-                for (var item : ast.getCategories()) {
-                    //for(var jtems: item.)
+                //2. Compare
+                Position hoverPosition = params.getPosition();  // Exact position of hover..
+                HoverModel model = new HoverModel(new Range(), "", "", "");
+
+                for (var i : list) {
+                    Position startPos = i.range.getStart();
+                    Position endPos = i.range.getEnd();
+
+                    int diff = endPos.getCharacter() - startPos.getCharacter();
+
+                    if (startPos.getLine() == hoverPosition.getLine()) {
+                        for (int j = 0; j < diff; j++) {
+                            if (hoverPosition.getCharacter() == startPos.getCharacter() + j) {
+                                model = i;
+                            }
+                        }
+                    }
                 }
+                if(model==null)
+                    return null;
+                
+                //  3. Prepare result
+                String result = model.typeDescription;
 
-                HoverHandler handler = new HoverHandler();
-                //String variable = handler.getVariable(pos, ast);
-                String variable = handler.fillTokens(ast, pos);
-                //iterate and check position
-                // 3 step to fix
-                //  get astring to print to hover
-                // get the object to string 
-                //get to print something
                 MarkupContent content = new MarkupContent();
                 content.setKind(MarkupKind.MARKDOWN);
-                //content.setValue("N/A");
-                content.setValue("NA");
+                content.setValue(result);
                 hover.setContents(content);
 
                 return hover;
+
             } catch (Throwable e) {
                 return null;
             }

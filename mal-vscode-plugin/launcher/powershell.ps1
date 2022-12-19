@@ -1,0 +1,1 @@
+Copy-Item "..\..\mal-ls\launcher\target\launcher.jar" -Destination "."
