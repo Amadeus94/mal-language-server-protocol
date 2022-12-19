@@ -104,32 +104,18 @@ public class MalTextDocumentService implements TextDocumentService {
     }
 
     /**
-     * The cleint sends the HoverParams data moedl as input parameters
+     * 'textDocument/hover'-request  
+     * The client sends the HoverParams data model as input parameters
      *
-     * The server can extract the document URI and Position enclosed wit hthe
-     * TextDocumentPositionParams
+     * The server can extract the document 
+     *      URI and Position enclosed with the TextDocumentPositionParams
      *
-     * In this implementation: 1. We use the document URI to isolate and obtain
-     * the SEMANTIC MODEL to extracthe the SYMBOL-information at the given
-     * CURSOR POSITION
-     *
-     * As a result: The 'textDocument/Hover'-request, the server sends a
-     * Hover-response data model
-     *
-     * The server can specify the associated information about the symbol with
-     * the contents field set
-     *
-     * Notice: The contents field can either be a 'MarkedString',
-     * 'MarkedString[]' or 'MarkupContent' // MarkedString structure has been
-     * deprecated
-     *
-     *
-     * Finally: Hover Data structure also contains a Range field - it specifies
-     * the associated region of the hover information - This range calculation
-     * can be different from one programming language to another based on the
-     * syntax and semantic representations - And also the client can interpret
-     * the range to highlight the hover range as per the client's desire
-     *
+     * The server responds with a hover-response data model
+     * 
+     *  1. Use the document URI to isolate and obtain the SEMANTIC MODEL to extrac the the SYMBOL-information at the given CURSOR POSITION
+     * 
+     *Notice: The contents field can either be a 
+     *  - 'MarkedString','MarkedString[]' or 'MarkupContent' // MarkedString structure has been deprecated
      */
     @Override
     public CompletableFuture<Hover> hover(HoverParams params) {
@@ -141,15 +127,12 @@ public class MalTextDocumentService implements TextDocumentService {
                 AST ast = context.get(ContextKeys.AST_KEY);
 
                 //1: Fill
-                //HashMap<Range, String> map = HoverProvider.fillItemsHashMap(ast);
                 Set<HoverModel> list = HoverProvider.fillItemsList(ast);
 
                 //2. Compare
                 Position hoverPosition = params.getPosition();  // Exact position of hover..
                 HoverModel model = new HoverModel(new Range(), "", "", "");
 
-                //hover position skal verða [)
-                //hover kemur í (1)
                 for (var i : list) {
                     Position startPos = i.range.getStart();
                     Position endPos = i.range.getEnd();
@@ -163,30 +146,17 @@ public class MalTextDocumentService implements TextDocumentService {
                             }
                         }
                     }
-
-                    //    String typeValue = map.get(pos); // checks only first token
-                    String result = model.typeDescription;
-                           //    = "range: " + model.range.toString()
-                            //  + "\ntype: " + model.id.toString()
-                            //  + "\ntype: " + model.type.toString()
-                            //  + "\nlist size: " + list.size();
-
-//           String  result = 
-                    //"Pos-toString: " + pos.toString() 
-                    //+ "\nTypeValueToString: " + typeValue.toString()
-                    //+ "\nHashmap Size: " + map.size();
-                    //iterate and check position
-                    // 3 step to fix
-                    //  get astring to print to hover
-                    // get the object to string 
-                    //get to print something
-                    MarkupContent content = new MarkupContent();
-                    content.setKind(MarkupKind.MARKDOWN);
-                    //content.setValue("N/A");
-                    //content.setValue(params.getPosition().toString());
-                    content.setValue(result);
-                    hover.setContents(content);
                 }
+                if(model==null)
+                    return null;
+                
+                //  3. Prepare result
+                String result = model.typeDescription;
+
+                MarkupContent content = new MarkupContent();
+                content.setKind(MarkupKind.MARKDOWN);
+                content.setValue(result);
+                hover.setContents(content);
 
                 return hover;
 
