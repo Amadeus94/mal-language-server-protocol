@@ -127,7 +127,7 @@ public class MalTextDocumentService implements TextDocumentService {
                 AST ast = context.get(ContextKeys.AST_KEY);
 
                 //1: Fill
-                Set<HoverModel> list = HoverProvider.fillItemsList(ast);
+                List<HoverModel> list = HoverProvider.fillItemsList(ast);
 
                 //2. Compare
                 Position hoverPosition = params.getPosition();  // Exact position of hover..
