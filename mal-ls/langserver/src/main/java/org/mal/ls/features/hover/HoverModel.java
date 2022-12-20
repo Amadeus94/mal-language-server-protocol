@@ -7,6 +7,7 @@ public class HoverModel {
     public String id;
     public String type;
     public String typeDescription;
+    
 
     public HoverModel(Range range, String id, String type, String typeDescription) {
         this.range = range;

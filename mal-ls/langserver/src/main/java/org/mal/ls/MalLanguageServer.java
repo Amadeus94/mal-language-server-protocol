@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
+import org.eclipse.lsp4j.ReferenceOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -46,6 +47,13 @@ public class MalLanguageServer implements LanguageServer, LanguageClientAware {
     // Register Hover
     initializeResult.getCapabilities().setHoverProvider(Either.forRight(ServerInitUtils.getHoverOptions()));
       // What does Either.forRight do? 
+
+    // References
+    ReferenceOptions referenceOptions = new ReferenceOptions();
+    referenceOptions.setWorkDoneProgress(true);
+    initializeResult.getCapabilities().setReferencesProvider(referenceOptions);
+
+
 
     return CompletableFuture.supplyAsync(() -> initializeResult);
   }

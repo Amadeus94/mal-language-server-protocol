@@ -56,6 +56,7 @@ import org.mal.ls.context.LanguageServerContext;
 import org.mal.ls.context.LanguageServerContextImpl;
 import org.mal.ls.features.hover.HoverModel;
 import org.mal.ls.features.hover.HoverProvider;
+import org.mal.ls.features.reference.ReferenceProvider;
 import org.mal.ls.handler.CompletionItemsHandler;
 import org.mal.ls.handler.DefinitionHandler;
 import org.mal.ls.handler.DiagnosticHandler;
@@ -74,6 +75,7 @@ public class MalTextDocumentService implements TextDocumentService {
     private final DefinitionHandler defHandler;
     private final DiagnosticHandler diagnosticHandler;
     private final FormatHandler formatHandler;
+    private final ReferenceProvider referenceProvider;
 
     public MalTextDocumentService(MalLanguageServer server) {
         this.server = server;
@@ -84,13 +86,15 @@ public class MalTextDocumentService implements TextDocumentService {
         this.diagnosticHandler = new DiagnosticHandler();
         this.formatHandler = new FormatHandler();
         this.malContext = new MalLSContext();
+        referenceProvider = new ReferenceProvider();
     }
 
     /**
      * Creates and returns a list of completion items
      */
     @Override
-    public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams completionParams) {
+    public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(
+            CompletionParams completionParams) {
         List<CompletionItem> completionItems = new ArrayList<>();
         ciHandler.addCompletionItemASTNames(context.get(ContextKeys.AST_KEY), completionItems);
         completionItems.addAll(ciHandler.getCompletionItems());
@@ -105,18 +109,20 @@ public class MalTextDocumentService implements TextDocumentService {
     }
 
     /**
-     * 'textDocument/hover'-request  
+     * 'textDocument/hover'-request
      * The client sends the HoverParams data model as input parameters
      *
-     * The server can extract the document 
-     *      URI and Position enclosed with the TextDocumentPositionParams
+     * The server can extract the document
+     * URI and Position enclosed with the TextDocumentPositionParams
      *
      * The server responds with a hover-response data model
      * 
-     *  1. Use the document URI to isolate and obtain the SEMANTIC MODEL to extrac the the SYMBOL-information at the given CURSOR POSITION
+     * 1. Use the document URI to isolate and obtain the SEMANTIC MODEL to extrac
+     * the the SYMBOL-information at the given CURSOR POSITION
      * 
-     *Notice: The contents field can either be a 
-     *  - 'MarkedString','MarkedString[]' or 'MarkupContent' // MarkedString structure has been deprecated
+     * Notice: The contents field can either be a
+     * - 'MarkedString','MarkedString[]' or 'MarkupContent' // MarkedString
+     * structure has been deprecated
      */
     @Override
     public CompletableFuture<Hover> hover(HoverParams params) {
@@ -127,11 +133,11 @@ public class MalTextDocumentService implements TextDocumentService {
 
                 AST ast = context.get(ContextKeys.AST_KEY);
 
-                //1: Fill
+                // 1: Fill
                 List<HoverModel> list = HoverProvider.fillItemsList(ast);
 
-                //2. Compare
-                Position hoverPosition = params.getPosition();  // Exact position of hover..
+                // 2. Compare
+                Position hoverPosition = params.getPosition(); // Exact position of hover..
                 HoverModel model = new HoverModel(new Range(), "", "", "");
 
                 for (var i : list) {
@@ -148,11 +154,17 @@ public class MalTextDocumentService implements TextDocumentService {
                         }
                     }
                 }
-                if(model==null)
+                if (model == null)
                     return null;
-                
-                //  3. Prepare result
-                String result = model.typeDescription;
+
+                // 3. Prepare result
+                String newLine = "\n\n";
+
+                String result = model.range.toString() + newLine
+                        + model.typeDescription + newLine
+                        + model.type + newLine
+                        + model.id + newLine
+                        + params.getPosition().toString();
 
                 MarkupContent content = new MarkupContent();
                 content.setKind(MarkupKind.MARKDOWN);
@@ -209,10 +221,62 @@ public class MalTextDocumentService implements TextDocumentService {
         });
     }
 
+    /**
+     * textDocument/reference - request
+     * 
+     * The request is sent from the server to the lcient to get all the references
+     * of a symbol
+     * 
+     * For a given source file
+     * compilers generate symbols including semantic information
+     * ^
+     * 
+     */
     @Override
     public CompletableFuture<List<? extends Location>> references(ReferenceParams referenceParams) {
-        return null;
+
+        context.put(ContextKeys.URI_KEY, referenceParams.getTextDocument().getUri());
+        List<Location> locationList = new ArrayList<>();
+
+
+        return CompletableFuture.supplyAsync(() -> {
+            String variable = referenceProvider.getVariable(referenceParams.getPosition(), context.get(ContextKeys.AST_KEY));
+            if (!variable.equals("")) {
+                locationList.addAll(referenceProvider.getDefinitionLocations(context.get(ContextKeys.URI_KEY)));
+            }
+            return locationList;
+        });
     }
+
+       // context.put(ContextKeys.URI_KEY, referenceParams.getTextDocument().getUri());
+
+        //AST ast = context.get(ContextKeys.AST_KEY);
+
+        //var position = referenceParams.getPosition();
+
+        //return CompletableFuture.supplyAsync(() -> {
+
+            //List<Location> locationList = new ArrayList<>();
+
+            //referenceParams.getContext().isIncludeDeclaration(); // specifies one property
+            //// includeDeclaration
+            //// Specifies whether the client expects the server to include the declaration of
+            //// the particular reference as well.
+            //// if true: then server should include the location of the particular symbol's
+            //// declaration as well
+            //// server sends back
+            //// An array of locations
+            //// A location includes the URI of the document
+            //// where the particular reference resides as well as teh range of the
+            //// reference's identifier
+            //// (e.g. the start and end of the variable name)
+            //// Reference variables
+            //locationList = referenceProvider.references(ast, referenceParams.getPosition());
+
+            //return locationList;
+
+        //});
+    //}
 
     @Override
     public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
@@ -264,6 +328,11 @@ public class MalTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<WorkspaceEdit> rename(RenameParams renameParams) {
+        var newName = renameParams.getNewName();
+        //renameParams.
+
+
+
         return null;
     }
 
