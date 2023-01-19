@@ -10,6 +10,8 @@
   <modules>
     <module>langserver</module>
     <module>launcher</module>
+    <module>server-core</module>
+    <module>server-api</module>
   </modules>
 
   <build>
