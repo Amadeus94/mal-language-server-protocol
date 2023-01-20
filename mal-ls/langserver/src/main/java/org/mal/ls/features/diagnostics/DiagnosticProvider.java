@@ -1,4 +1,4 @@
-package org.mal.ls.handler;
+package org.mal.ls.features.diagnostics;
 
 import java.util.List;
 

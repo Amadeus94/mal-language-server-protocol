@@ -15,5 +15,7 @@
 
   <name>langserver</name>
   <packaging>jar</packaging>
+    <dependencies>
 
+    </dependencies>
 </project>

@@ -59,11 +59,9 @@ import org.mal.ls.features.hover.HoverProvider;
 import org.mal.ls.features.reference.ReferenceProvider;
 import org.mal.ls.features.completion.CompletionItemsProvider;
 import org.mal.ls.features.definition.DefinitionProvider;
-import org.mal.ls.handler.DiagnosticProvider;
+import org.mal.ls.features.diagnostics.DiagnosticProvider;
 import org.mal.ls.features.format.FormatProvider;
-//import org.mal.ls.handler.hover.HoverProvider;
-import org.mal.serverApi.api.context.LSContext;
-import org.mal.serverCore.core.MalLSContext;
+
 
 /**
  * TextDocumentService is responsible for handling the communication between the client and the server
@@ -94,7 +92,6 @@ public class MalTextDocumentService implements TextDocumentService {
     private final ReferenceProvider referenceProvider;
 
 
-    private final LSContext malContext; // TODO: Remove this
 
     public MalTextDocumentService(MalLanguageServer server) {
         this.server = server;
@@ -104,7 +101,6 @@ public class MalTextDocumentService implements TextDocumentService {
         this.defHandler = new DefinitionProvider();
         this.diagnosticHandler = new DiagnosticProvider();
         this.formatHandler = new FormatProvider();
-        this.malContext = new MalLSContext();
         referenceProvider = new ReferenceProvider();
     }
 
