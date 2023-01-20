@@ -57,34 +57,53 @@ import org.mal.ls.context.LanguageServerContextImpl;
 import org.mal.ls.features.hover.HoverModel;
 import org.mal.ls.features.hover.HoverProvider;
 import org.mal.ls.features.reference.ReferenceProvider;
-import org.mal.ls.handler.CompletionItemsHandler;
-import org.mal.ls.handler.DefinitionHandler;
-import org.mal.ls.handler.DiagnosticHandler;
-import org.mal.ls.handler.FormatHandler;
-import org.mal.ls.handler.HoverHandler;
+import org.mal.ls.features.completion.CompletionItemsProvider;
+import org.mal.ls.features.definition.DefinitionProvider;
+import org.mal.ls.handler.DiagnosticProvider;
+import org.mal.ls.features.format.FormatProvider;
+import org.mal.ls.handler.hover.HoverProvider;
 import org.mal.serverApi.api.context.LSContext;
 import org.mal.serverCore.core.MalLSContext;
 
+/**
+ * TextDocumentService is responsible for handling the communication between the client and the server
+ * related to text documents, such as synchronization, code completion, and error checking. 
+ * 
+ * Requests such as hover, completion, definition, etc.
+ * 
+ * The class contains a MalLanguageServer instance 
+ * which is used to send notifications to the client.
+ * 
+ * The class also contains a LanguageServerContext instance 
+ * which is used to store the context of the language server.  In other words, 
+ * when a client sends a request such as textdocument/completion, the server will store the
+ * request parameters in the context. The server will then use the context 
+ * typically in a provider class such as ReferenceProvider to to dermine which code to reference.
+ * 
+ */
 public class MalTextDocumentService implements TextDocumentService {
 
     private final MalLanguageServer server;
     private final LanguageServerContext context;
-    private final LSContext malContext; // new
     private final DocumentManager documentManager;
-    private final CompletionItemsHandler ciHandler;
-    private final DefinitionHandler defHandler;
-    private final DiagnosticHandler diagnosticHandler;
-    private final FormatHandler formatHandler;
+
+    private final CompletionItemsProvider ciHandler;
+    private final DefinitionProvider defHandler;
+    private final DiagnosticProvider diagnosticHandler;
+    private final FormatProvider formatHandler;
     private final ReferenceProvider referenceProvider;
+
+
+    private final LSContext malContext; // TODO: Remove this
 
     public MalTextDocumentService(MalLanguageServer server) {
         this.server = server;
         this.context = new LanguageServerContextImpl();
         this.documentManager = new DocumentManagerImpl();
-        this.ciHandler = new CompletionItemsHandler();
-        this.defHandler = new DefinitionHandler();
-        this.diagnosticHandler = new DiagnosticHandler();
-        this.formatHandler = new FormatHandler();
+        this.ciHandler = new CompletionItemsProvider();
+        this.defHandler = new DefinitionProvider();
+        this.diagnosticHandler = new DiagnosticProvider();
+        this.formatHandler = new FormatProvider();
         this.malContext = new MalLSContext();
         referenceProvider = new ReferenceProvider();
     }

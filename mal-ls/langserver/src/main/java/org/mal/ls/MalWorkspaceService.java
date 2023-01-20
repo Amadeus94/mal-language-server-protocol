@@ -9,6 +9,15 @@ import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.WorkspaceSymbolParams;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+/**
+ * MalWorkspaceService is used to handle workspace requests 
+ * 
+ * Examples of requests from the client to the server:
+ * - textworkspace/didChangeConfiguration
+ * - textworkspace/didChangeWatchedFiles
+ * 
+ * etc.
+ */
 public class MalWorkspaceService implements WorkspaceService {
   @Override
   public CompletableFuture<List<? extends SymbolInformation>> symbol(WorkspaceSymbolParams workspaceSymbolParams) {

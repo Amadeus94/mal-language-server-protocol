@@ -10,7 +10,7 @@ import org.mal.ls.compiler.lib.MalDiagnosticLogger;
 import org.mal.ls.context.ContextKeys;
 import org.mal.ls.context.LanguageServerContext;
 
-public class DiagnosticHandler {
+public class DiagnosticProvider {
 
   public void sendDiagnostics(LanguageClient client, LanguageServerContext context) {
     Analyzer.analyze(context.get(ContextKeys.AST_KEY));

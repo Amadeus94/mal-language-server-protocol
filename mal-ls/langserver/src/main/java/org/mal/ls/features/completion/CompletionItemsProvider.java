@@ -1,7 +1,7 @@
 /** 
  * This class handles the instences of completion items
  */
-package org.mal.ls.handler;
+package org.mal.ls.features.completion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,11 +39,11 @@ import org.mal.ls.completionItems.Require;
 import org.mal.ls.completionItems.Union;
 import org.mal.ls.completionItems.UserInfo;
 
-public class CompletionItemsHandler {
+public class CompletionItemsProvider {
 
     private List<CompletionItem> completionItems;
 
-    public CompletionItemsHandler() {
+    public CompletionItemsProvider() {
         this.completionItems = new ArrayList<>();
         initItems();
     }

@@ -1,12 +1,10 @@
-package org.mal.ls.handler;
+package org.mal.ls.features.definition;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
-import org.eclipse.lsp4j.Range;
 import org.mal.ls.compiler.lib.AST;
 import org.mal.ls.compiler.lib.AST.Asset;
 import org.mal.ls.compiler.lib.AST.Association;
@@ -20,8 +18,8 @@ import org.mal.ls.compiler.lib.AST.Reaches;
 import org.mal.ls.compiler.lib.AST.Requires;
 import org.mal.ls.compiler.lib.AST.Variable;
 
+public class DefinitionProvider {
 
-public class HoverHandler {
   private String uri = "";
   private String variable = "";
   private int cursorLine = 0;
@@ -29,27 +27,6 @@ public class HoverHandler {
   private AST ast;
   private List<Location> locations;
   // private DefinitionContext dc;
-  private HashMap<Range, String> tokens; 
-  
-  public String fillTokens(AST ast, Position pos){
-    this.ast = ast;
-
-    List<Category> categories = ast.getCategories();
-
-    for(var item: categories){
-        tokens.put(item.getRange(), item.name.toString());
-    }
-
-    String result = "Not found";
-    
-    //Compare
-    // print just normal position to fig out if it even gets through
-
-    return pos.toString();
-
-
-    //return result;
-  }
 
   private void reset() {
     this.variable = "";
@@ -127,8 +104,6 @@ public class HoverHandler {
     iterAssociation(ast.getAssociations());
     if (this.variable.equals(""))
       iterAST(ast.getCategories());
-
-
     return this.variable;
   }
 

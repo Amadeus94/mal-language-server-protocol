@@ -1,4 +1,4 @@
-package org.mal.ls.handler;
+package org.mal.ls.features.format;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import org.eclipse.lsp4j.TextEdit;
 import org.mal.ls.compiler.lib.CompilerException;
 import org.mal.ls.formatter.Formatter;
 
-public class FormatHandler {
+public class FormatProvider {
   public List<TextEdit> getFormatted(String uri, String content)
       throws CompilerException, IOException, URISyntaxException {
     try {
