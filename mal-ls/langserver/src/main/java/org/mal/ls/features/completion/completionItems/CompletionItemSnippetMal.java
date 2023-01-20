@@ -1,12 +1,8 @@
-package org.mal.ls.completionItems;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.mal.ls.features.completion.completionItems;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.InsertTextFormat;
-import org.eclipse.lsp4j.TextEdit;
 
 public class CompletionItemSnippetMal {
 

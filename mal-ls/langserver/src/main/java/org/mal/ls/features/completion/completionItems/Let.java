@@ -1,7 +1,7 @@
 /** 
  * This class represents the completion item let
  */
-package org.mal.ls.completionItems;
+package org.mal.ls.features.completion.completionItems;
 
 import org.eclipse.lsp4j.CompletionItemKind;
 

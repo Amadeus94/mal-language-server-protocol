@@ -61,7 +61,7 @@ import org.mal.ls.features.completion.CompletionItemsProvider;
 import org.mal.ls.features.definition.DefinitionProvider;
 import org.mal.ls.handler.DiagnosticProvider;
 import org.mal.ls.features.format.FormatProvider;
-import org.mal.ls.handler.hover.HoverProvider;
+//import org.mal.ls.handler.hover.HoverProvider;
 import org.mal.serverApi.api.context.LSContext;
 import org.mal.serverCore.core.MalLSContext;
 
