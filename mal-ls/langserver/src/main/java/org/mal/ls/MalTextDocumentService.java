@@ -57,6 +57,8 @@ import org.mal.ls.context.LanguageServerContextImpl;
 import org.mal.ls.features.hover.HoverModel;
 import org.mal.ls.features.hover.HoverProvider;
 import org.mal.ls.features.reference.ReferenceProvider;
+import org.mal.ls.features.symbol.ReferenceHandler;
+import org.mal.ls.features.symbol.Symbol;
 import org.mal.ls.features.completion.CompletionItemsProvider;
 import org.mal.ls.features.definition.DefinitionProvider;
 import org.mal.ls.features.diagnostics.DiagnosticProvider;
@@ -251,16 +253,56 @@ public class MalTextDocumentService implements TextDocumentService {
     public CompletableFuture<List<? extends Location>> references(ReferenceParams referenceParams) {
 
         context.put(ContextKeys.URI_KEY, referenceParams.getTextDocument().getUri());
+        Position cursorPosition = referenceParams.getPosition();
         List<Location> locationList = new ArrayList<>();
 
+        StringBuilder sb = new StringBuilder();
 
         return CompletableFuture.supplyAsync(() -> {
-            String variable = referenceProvider.getVariable(referenceParams.getPosition(), context.get(ContextKeys.AST_KEY));
-            if (!variable.equals("")) {
-                locationList.addAll(referenceProvider.getDefinitionLocations(context.get(ContextKeys.URI_KEY)));
+            try {
+                // Get the symbols from the AST
+                List<Symbol> symbols = ReferenceHandler.getSymbols(context.get(ContextKeys.AST_KEY));
+                for (Symbol s : symbols) {
+                    sb.append(s.getName() + "\t" + s.getKind() + s.getLocation().getRange().toString());
+                    sb.append("\n");
+                } 
+                server.getClient().showMessage(new MessageParams(MessageType.Info, "cursorPos: " + cursorPosition.toString()));
+                server.getClient().showMessage(new MessageParams(MessageType.Info, "Symbols start size: " + symbols.size()));
+                server.getClient().showMessage(new MessageParams(MessageType.Info, sb.toString()));
+
+                for (Symbol s : symbols) {
+                    // Check whether cursor position is within the range of the symbol 
+                    Position startPos = s.getLocation().getRange().getStart();
+                    Position endPos = s.getLocation().getRange().getEnd();
+
+                    int diff = endPos.getCharacter() - startPos.getCharacter();
+
+                    if (startPos.getLine() == cursorPosition.getLine()) {
+                        for (int j = 0; j < diff; j++) {
+                            if (cursorPosition.getCharacter() == startPos.getCharacter() + j + s.getKind().length()) {
+                                server.getClient().showMessage(new MessageParams(MessageType.Info, "Symbol: " + s.getName()));
+                                locationList.add(s.getLocation()); 
+                            }
+                        }
+                    }
+                }
+
+                server.getClient().showMessage(new MessageParams(MessageType.Info, "Location Size: " + locationList.size()));
+                return locationList;
+            } catch (Throwable e) {
+                return null;
             }
-            return locationList;
         });
+
+
+
+        //return CompletableFuture.supplyAsync(() -> {
+            //String variable = referenceProvider.getVariable(referenceParams.getPosition(), context.get(ContextKeys.AST_KEY));
+            //if (!variable.equals("")) {
+                //locationList.addAll(referenceProvider.getDefinitionLocations(context.get(ContextKeys.URI_KEY)));
+            //}
+            //return locationList;
+        //});
     }
 
        // context.put(ContextKeys.URI_KEY, referenceParams.getTextDocument().getUri());
