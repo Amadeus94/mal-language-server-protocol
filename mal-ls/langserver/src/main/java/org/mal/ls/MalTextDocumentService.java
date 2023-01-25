@@ -270,18 +270,18 @@ public class MalTextDocumentService implements TextDocumentService {
         Position cursorPosition = referenceParams.getPosition();
         List<Location> locationList = new ArrayList<>();
 
-
         return CompletableFuture.supplyAsync(() -> {
             try {
                 // Get the symbols from the AST
                 List<Symbol> symbols = symbolProvider.getSymbols(context.get(ContextKeys.AST_KEY));
                 Symbol symbolAtCursor = getSymbol(cursorPosition, symbols);
-                
-                if(symbolAtCursor == null)
+
+                if (symbolAtCursor == null)
                     return locationList;
-                   
+
                 server.getClient()
-                        .showMessage(new MessageParams(MessageType.Info, "symbolAtCursor: " + symbolAtCursor.getName()));
+                        .showMessage(
+                                new MessageParams(MessageType.Info, "symbolAtCursor: " + symbolAtCursor.getName()));
 
                 for (Symbol s : symbols) {
                     if (s.getName().equals(symbolAtCursor.getName())) {
@@ -293,12 +293,6 @@ public class MalTextDocumentService implements TextDocumentService {
                     }
                 }
 
-                server.getClient()
-                        .showMessage(new MessageParams(MessageType.Info, "cursorPos: " + cursorPosition.toString()));
-                server.getClient()
-                        .showMessage(new MessageParams(MessageType.Info, "Symbols start size: " + symbols.size()));
-                server.getClient()
-                        .showMessage(new MessageParams(MessageType.Info, "Location Size: " + locationList.size()));
                 return locationList;
             } catch (Throwable e) {
                 return null;
@@ -316,7 +310,7 @@ public class MalTextDocumentService implements TextDocumentService {
 
             if (startPos.getLine() == cursorPosition.getLine()) {
                 for (int j = 0; j < diff; j++) {
-                    if (cursorPosition.getCharacter() == startPos.getCharacter() + j + s.getKind().length()) {
+                    if (cursorPosition.getCharacter() == startPos.getCharacter() + j) {
                         return s;
                     }
                 }

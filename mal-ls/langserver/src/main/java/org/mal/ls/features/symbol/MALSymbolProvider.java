@@ -35,20 +35,20 @@ public class MALSymbolProvider {
 
     // 2. Iterate over all categories
     ast.getCategories().forEach((category) -> {
-      symbols.add(new Symbol(category.name.id, "category", category.getLocation()));
+      symbols.add(new Symbol(category.name.id, "category", category.name.getLocation()));
       category.getAssets().forEach((asset) -> {
 
-        symbols.add(new Symbol(asset.name.id, "asset", asset.getLocation()));
+        symbols.add(new Symbol(asset.name.id, "asset", asset.name.getLocation()));
         asset.getAttacksteps().forEach((attackStep) -> {
-          symbols.add(new Symbol(attackStep.name.id, "attackStep", attackStep.getLocation()));
+          symbols.add(new Symbol(attackStep.name.id, "attackStep", attackStep.name.getLocation()));
         });
         asset.getVariables().forEach((variable) -> {
-          symbols.add(new Symbol(variable.name.id, "variable", variable.getLocation()));
+          symbols.add(new Symbol(variable.name.id, "variable", variable.name.getLocation()));
         });
       });
     });
 
-    //TODO: Associations - Maybe add 
+    //TODO: Associations - Maybe change to ID getlocation?
     ast.getAssociations().forEach((association) -> {
       symbols.add(new Symbol(association.leftAsset.id,  "association",   association.leftAsset.getLocation()));
       symbols.add(new Symbol(association.linkName.id,   "linkName",       association.linkName.getLocation()));
