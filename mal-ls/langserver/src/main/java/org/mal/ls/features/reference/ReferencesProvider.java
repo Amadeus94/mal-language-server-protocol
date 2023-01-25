@@ -17,6 +17,7 @@ import org.mal.ls.compiler.lib.AST.IDExpr;
 import org.mal.ls.compiler.lib.AST.Reaches;
 import org.mal.ls.compiler.lib.AST.Requires;
 import org.mal.ls.compiler.lib.AST.Variable;
+import org.mal.ls.features.symbol.Symbol;
 import org.mal.ls.utils.Utils;
 
 public class ReferencesProvider {
@@ -51,38 +52,27 @@ public class ReferencesProvider {
   public List<Location> getDefinitionLocations(String uri) {
     this.uri = uri;
     this.locations = new ArrayList<>();
-    iterCategories(this.ast.getCategories());
     return this.locations;
   }
 
-  private void iterCategories(List<Category> categories) {
-    categories.forEach((category) -> {
-      if (Utils.decapitalize(category.name.id).equals(this.variable))
-        locations.add(new Location(getDefinitionUri(category.getUri()), category.getRange()));
-      iterAssets(category.assets);
-    });
-  }
-
-  private void iterAssets(List<Asset> assets) {
-    assets.forEach((asset) -> {
-      if (Utils.decapitalize(asset.name.id).equals(this.variable))
+  private void fillLocationList(AST ast) {
+    // The elements
+    ast.getCategories().forEach((category) -> {
+      //Symbol symbol = new Symbol(category., category.getRange(), category.getUri());
+      locations.add(new Location(getDefinitionUri(category.getUri()), category.getRange()));
+      category.getAssets().forEach((asset) -> {
         locations.add(new Location(getDefinitionUri(asset.getUri()), asset.getRange()));
-      iterVariables(asset.variables);
-      iterAttackSteps(asset.attackSteps);
+        asset.variables.forEach((variable) -> {
+          locations.add(new Location(getDefinitionUri(variable.getUri()), variable.getRange()));
+        });
+        asset.attackSteps.forEach((attackStep) -> {
+          locations.add(new Location(getDefinitionUri(attackStep.getUri()), attackStep.getRange()));
+        });
+      });
     });
-  }
 
-  private void iterVariables(List<Variable> variables) {
-    variables.forEach((variable) -> {
-      if (Utils.decapitalize(variable.name.id).equals(this.variable))
-        locations.add(new Location(getDefinitionUri(variable.getUri()), variable.getRange()));
-    });
-  }
-
-  private void iterAttackSteps(List<AttackStep> attackSteps) {
-    attackSteps.forEach((as) -> {
-      if (Utils.decapitalize(as.name.id).equals(this.variable))
-        locations.add(new Location(getDefinitionUri(as.getUri()), as.getRange()));
+    // The associations
+    ast.getAssociations().forEach((association) -> {
     });
   }
 

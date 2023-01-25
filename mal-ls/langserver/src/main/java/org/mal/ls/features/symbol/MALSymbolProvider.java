@@ -3,7 +3,6 @@ package org.mal.ls.features.symbol;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.mal.ls.compiler.lib.AST;
@@ -19,9 +18,8 @@ import org.mal.ls.compiler.lib.AST.Reaches;
 import org.mal.ls.compiler.lib.AST.Requires;
 import org.mal.ls.compiler.lib.AST.Variable;
 
-
-
 public class MALSymbolProvider {
+
   private String uri = "";
   private String variable = "";
   private int cursorLine = 0;
@@ -30,30 +28,47 @@ public class MALSymbolProvider {
   private List<Location> locations;
   // private DefinitionContext dc;
 
-  public List<Location> getSymbolLocations(String uri) {
-    List<Location> locations = new ArrayList<>(); // change this to symbol
+  public List<Symbol> getSymbols(AST ast) {
+    // 1. Make a flat structure of all symbols. This means I will add everything
+    // into same list
+    List<Symbol> symbols = new ArrayList<>();
 
+    // 2. Iterate over all categories
+    ast.getCategories().forEach((category) -> {
+      symbols.add(new Symbol(category.name.id, "category", category.getLocation()));
+      category.getAssets().forEach((asset) -> {
 
+        symbols.add(new Symbol(asset.name.id, "asset", asset.getLocation()));
+        asset.getAttacksteps().forEach((attackStep) -> {
+          symbols.add(new Symbol(attackStep.name.id, "attackStep", attackStep.getLocation()));
+        });
+        asset.getVariables().forEach((variable) -> {
+          symbols.add(new Symbol(variable.name.id, "variable", variable.getLocation()));
+        });
+      });
+    });
 
+    //TODO: Associations - Maybe add 
+    ast.getAssociations().forEach((association) -> {
+      symbols.add(new Symbol(association.leftAsset.id,  "association",   association.leftAsset.getLocation()));
+      symbols.add(new Symbol(association.linkName.id,   "linkName",       association.linkName.getLocation()));
+      symbols.add(new Symbol(association.rightAsset.id, "association",  association.rightAsset.getLocation()));
+      symbols.add(new Symbol(association.rightField.id, "field",  association.rightField.getLocation()));
+      symbols.add(new Symbol(association.leftField.id, "field",  association.leftField.getLocation()));
+    });;
 
+    //TODO: 
+    ast.getDefines();
 
-    this.uri = uri;
-    this.locations = new ArrayList<>();
-    iterCategories(this.ast.getCategories());
-    return this.locations;
+    return symbols;
   }
 
-
-
-
-  /** Resets  current variable ... I see no reason to have this*/
   private void reset() {
     this.variable = "";
     this.cursorLine = 0;
     this.cursorChar = 0;
   }
 
-  // 
   private String setLowerCase(String str) {
     char c[] = str.toCharArray();
     c[0] = Character.toLowerCase(c[0]);
@@ -77,40 +92,9 @@ public class MALSymbolProvider {
   public List<Location> getDefinitionLocations(String uri) {
     this.uri = uri;
     this.locations = new ArrayList<>();
-    iterCategories(this.ast.getCategories());
     return this.locations;
   }
 
-  private void iterCategories(List<Category> categories) {
-    categories.forEach((category) -> {
-      if (setLowerCase(category.name.id).equals(this.variable))
-        locations.add(new Location(getDefinitionUri(category.getUri()), category.getRange()));
-      iterAssets(category.assets);
-    });
-  }
-
-  private void iterAssets(List<Asset> assets) {
-    assets.forEach((asset) -> {
-      if (setLowerCase(asset.name.id).equals(this.variable))
-        locations.add(new Location(getDefinitionUri(asset.getUri()), asset.getRange()));
-      iterVariables(asset.variables);
-      iterAttackSteps(asset.attackSteps);
-    });
-  }
-
-  private void iterVariables(List<Variable> variables) {
-    variables.forEach((variable) -> {
-      if (setLowerCase(variable.name.id).equals(this.variable))
-        locations.add(new Location(getDefinitionUri(variable.getUri()), variable.getRange()));
-    });
-  }
-
-  private void iterAttackSteps(List<AttackStep> attackSteps) {
-    attackSteps.forEach((as) -> {
-      if (setLowerCase(as.name.id).equals(this.variable))
-        locations.add(new Location(getDefinitionUri(as.getUri()), as.getRange()));
-    });
-  }
 
   /*
    * Finds and sets the token name to the corresponding postion

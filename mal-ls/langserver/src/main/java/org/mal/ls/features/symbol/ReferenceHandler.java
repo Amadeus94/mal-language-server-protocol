@@ -22,9 +22,9 @@ public class ReferenceHandler {
             String name = category.name.id;
             String kind = "category";
             Location location = category.getLocation();
-            Symbol symbol = new Symbol (name, kind, location);
+            //Symbol symbol = new Symbol (name, kind, new Location());
 
-            list.add(symbol);
+            //list.add(symbol);
         })
         
         

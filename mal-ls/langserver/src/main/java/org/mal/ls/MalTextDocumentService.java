@@ -57,6 +57,7 @@ import org.mal.ls.context.LanguageServerContextImpl;
 import org.mal.ls.features.hover.HoverModel;
 import org.mal.ls.features.hover.HoverProvider;
 import org.mal.ls.features.reference.ReferenceProvider;
+import org.mal.ls.features.symbol.MALSymbolProvider;
 import org.mal.ls.features.symbol.ReferenceHandler;
 import org.mal.ls.features.symbol.Symbol;
 import org.mal.ls.features.completion.CompletionItemsProvider;
@@ -64,21 +65,24 @@ import org.mal.ls.features.definition.DefinitionProvider;
 import org.mal.ls.features.diagnostics.DiagnosticProvider;
 import org.mal.ls.features.format.FormatProvider;
 
-
 /**
- * TextDocumentService is responsible for handling the communication between the client and the server
- * related to text documents, such as synchronization, code completion, and error checking. 
+ * TextDocumentService is responsible for handling the communication between the
+ * client and the server
+ * related to text documents, such as synchronization, code completion, and
+ * error checking.
  * 
  * Requests such as hover, completion, definition, etc.
  * 
- * The class contains a MalLanguageServer instance 
+ * The class contains a MalLanguageServer instance
  * which is used to send notifications to the client.
  * 
- * The class also contains a LanguageServerContext instance 
- * which is used to store the context of the language server.  In other words, 
- * when a client sends a request such as textdocument/completion, the server will store the
- * request parameters in the context. The server will then use the context 
- * typically in a provider class such as ReferenceProvider to to dermine which code to reference.
+ * The class also contains a LanguageServerContext instance
+ * which is used to store the context of the language server. In other words,
+ * when a client sends a request such as textdocument/completion, the server
+ * will store the
+ * request parameters in the context. The server will then use the context
+ * typically in a provider class such as ReferenceProvider to to dermine which
+ * code to reference.
  * 
  */
 public class MalTextDocumentService implements TextDocumentService {
@@ -92,8 +96,6 @@ public class MalTextDocumentService implements TextDocumentService {
     private final DiagnosticProvider diagnosticHandler;
     private final FormatProvider formatHandler;
     private final ReferenceProvider referenceProvider;
-
-
 
     public MalTextDocumentService(MalLanguageServer server) {
         this.server = server;
@@ -236,6 +238,18 @@ public class MalTextDocumentService implements TextDocumentService {
             }
             return Either.forLeft(locationList);
         });
+
+    }
+
+    private String getDefinitionUri(String fileName, String uri) {
+        StringBuilder sb = new StringBuilder();
+        String[] path = uri.split("/");
+        for (int i = 0; i < path.length - 1; i++) {
+            sb.append(path[i]);
+            sb.append("/");
+        }
+        sb.append(fileName);
+        return sb.toString();
     }
 
     /**
@@ -251,89 +265,65 @@ public class MalTextDocumentService implements TextDocumentService {
      */
     @Override
     public CompletableFuture<List<? extends Location>> references(ReferenceParams referenceParams) {
-
+        MALSymbolProvider symbolProvider = new MALSymbolProvider();
         context.put(ContextKeys.URI_KEY, referenceParams.getTextDocument().getUri());
         Position cursorPosition = referenceParams.getPosition();
         List<Location> locationList = new ArrayList<>();
 
-        StringBuilder sb = new StringBuilder();
 
         return CompletableFuture.supplyAsync(() -> {
             try {
                 // Get the symbols from the AST
-                List<Symbol> symbols = ReferenceHandler.getSymbols(context.get(ContextKeys.AST_KEY));
-                for (Symbol s : symbols) {
-                    sb.append(s.getName() + "\t" + s.getKind() + s.getLocation().getRange().toString());
-                    sb.append("\n");
-                } 
-                server.getClient().showMessage(new MessageParams(MessageType.Info, "cursorPos: " + cursorPosition.toString()));
-                server.getClient().showMessage(new MessageParams(MessageType.Info, "Symbols start size: " + symbols.size()));
-                server.getClient().showMessage(new MessageParams(MessageType.Info, sb.toString()));
+                List<Symbol> symbols = symbolProvider.getSymbols(context.get(ContextKeys.AST_KEY));
+                Symbol symbolAtCursor = getSymbol(cursorPosition, symbols);
+                
+                if(symbolAtCursor == null)
+                    return locationList;
+                   
+                server.getClient()
+                        .showMessage(new MessageParams(MessageType.Info, "symbolAtCursor: " + symbolAtCursor.getName()));
 
                 for (Symbol s : symbols) {
-                    // Check whether cursor position is within the range of the symbol 
-                    Position startPos = s.getLocation().getRange().getStart();
-                    Position endPos = s.getLocation().getRange().getEnd();
-
-                    int diff = endPos.getCharacter() - startPos.getCharacter();
-
-                    if (startPos.getLine() == cursorPosition.getLine()) {
-                        for (int j = 0; j < diff; j++) {
-                            if (cursorPosition.getCharacter() == startPos.getCharacter() + j + s.getKind().length()) {
-                                server.getClient().showMessage(new MessageParams(MessageType.Info, "Symbol: " + s.getName()));
-                                locationList.add(s.getLocation()); 
-                            }
-                        }
+                    if (s.getName().equals(symbolAtCursor.getName())) {
+                        locationList.add(
+                                new Location(
+                                        getDefinitionUri(
+                                                s.getLocation().getUri(), context.get(ContextKeys.URI_KEY)),
+                                        s.getLocation().getRange()));
                     }
                 }
 
-                server.getClient().showMessage(new MessageParams(MessageType.Info, "Location Size: " + locationList.size()));
+                server.getClient()
+                        .showMessage(new MessageParams(MessageType.Info, "cursorPos: " + cursorPosition.toString()));
+                server.getClient()
+                        .showMessage(new MessageParams(MessageType.Info, "Symbols start size: " + symbols.size()));
+                server.getClient()
+                        .showMessage(new MessageParams(MessageType.Info, "Location Size: " + locationList.size()));
                 return locationList;
             } catch (Throwable e) {
                 return null;
             }
         });
-
-
-
-        //return CompletableFuture.supplyAsync(() -> {
-            //String variable = referenceProvider.getVariable(referenceParams.getPosition(), context.get(ContextKeys.AST_KEY));
-            //if (!variable.equals("")) {
-                //locationList.addAll(referenceProvider.getDefinitionLocations(context.get(ContextKeys.URI_KEY)));
-            //}
-            //return locationList;
-        //});
     }
 
-       // context.put(ContextKeys.URI_KEY, referenceParams.getTextDocument().getUri());
+    private Symbol getSymbol(Position cursorPosition, List<Symbol> symbols) {
+        for (Symbol s : symbols) {
+            // Check whether cursor position is within the range of the symbol
+            Position startPos = s.getLocation().getRange().getStart();
+            Position endPos = s.getLocation().getRange().getEnd();
 
-        //AST ast = context.get(ContextKeys.AST_KEY);
+            int diff = endPos.getCharacter() - startPos.getCharacter();
 
-        //var position = referenceParams.getPosition();
-
-        //return CompletableFuture.supplyAsync(() -> {
-
-            //List<Location> locationList = new ArrayList<>();
-
-            //referenceParams.getContext().isIncludeDeclaration(); // specifies one property
-            //// includeDeclaration
-            //// Specifies whether the client expects the server to include the declaration of
-            //// the particular reference as well.
-            //// if true: then server should include the location of the particular symbol's
-            //// declaration as well
-            //// server sends back
-            //// An array of locations
-            //// A location includes the URI of the document
-            //// where the particular reference resides as well as teh range of the
-            //// reference's identifier
-            //// (e.g. the start and end of the variable name)
-            //// Reference variables
-            //locationList = referenceProvider.references(ast, referenceParams.getPosition());
-
-            //return locationList;
-
-        //});
-    //}
+            if (startPos.getLine() == cursorPosition.getLine()) {
+                for (int j = 0; j < diff; j++) {
+                    if (cursorPosition.getCharacter() == startPos.getCharacter() + j + s.getKind().length()) {
+                        return s;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     @Override
     public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
@@ -386,9 +376,7 @@ public class MalTextDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<WorkspaceEdit> rename(RenameParams renameParams) {
         var newName = renameParams.getNewName();
-        //renameParams.
-
-
+        // renameParams.
 
         return null;
     }
