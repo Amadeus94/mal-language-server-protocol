@@ -145,6 +145,7 @@ public class MalTextDocumentService implements TextDocumentService {
      */
     @Override
     public CompletableFuture<Hover> hover(HoverParams params) {
+
         return CompletableFuture.supplyAsync(() -> {
             try {
                 Hover hover = new Hover();
@@ -153,37 +154,29 @@ public class MalTextDocumentService implements TextDocumentService {
                 AST ast = context.get(ContextKeys.AST_KEY);
 
                 // 1: Fill
-                List<HoverModel> list = HoverProvider.fillItemsList(ast);
+                List<HoverModel> hoverModels = HoverProvider.fillItemsList(ast);
 
                 // 2. Compare
-                Position hoverPosition = params.getPosition(); // Exact position of hover..
+                Position hoverPosition = params.getPosition();
+
+                MALSymbolProvider symbolProvider = new MALSymbolProvider();
+                List<Symbol> symbols = symbolProvider.getSymbols(ast);
+                Symbol symbolAtCursor = getSymbol(hoverPosition, symbols);
+
+                // 3. Get the hover model
                 HoverModel model = new HoverModel(new Range(), "", "", "");
-
-                for (var i : list) {
-                    Position startPos = i.range.getStart();
-                    Position endPos = i.range.getEnd();
-
-                    int diff = endPos.getCharacter() - startPos.getCharacter();
-
-                    if (startPos.getLine() == hoverPosition.getLine()) {
-                        for (int j = 0; j < diff; j++) {
-                            if (hoverPosition.getCharacter() == startPos.getCharacter() + j) {
-                                model = i;
-                            }
-                        }
+                for (HoverModel hoverModel : hoverModels) {
+                    if (hoverModel.id.equals(symbolAtCursor.getName())) {
+                        model = hoverModel;
                     }
                 }
-                if (model == null)
-                    return null;
+                // 3.1. If no hover model is found, return empty
+                if (model.id.equals("")) {
+                    return hover;
+                }
 
-                // 3. Prepare result
-                String newLine = "\n\n";
-
-                String result = model.range.toString() + newLine
-                        + model.typeDescription + newLine
-                        + model.type + newLine
-                        + model.id + newLine
-                        + params.getPosition().toString();
+                // 4. Prepare result
+                String result = model.typeDescription; 
 
                 MarkupContent content = new MarkupContent();
                 content.setKind(MarkupKind.MARKDOWN);
@@ -222,8 +215,6 @@ public class MalTextDocumentService implements TextDocumentService {
      * various category, asset, attack step, and let variables names from the
      * saved syntax tree th server responds with a list of positiosn that match
      * the previously token name.
-     *
-     *
      *
      */
     @Override
