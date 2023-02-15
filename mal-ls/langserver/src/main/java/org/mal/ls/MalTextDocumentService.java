@@ -176,7 +176,7 @@ public class MalTextDocumentService implements TextDocumentService {
                 }
 
                 // 4. Prepare result
-                String result = model.typeDescription; 
+                String result = model.typeDescription;
 
                 MarkupContent content = new MarkupContent();
                 content.setKind(MarkupKind.MARKDOWN);
@@ -186,7 +186,7 @@ public class MalTextDocumentService implements TextDocumentService {
                 return hover;
 
             } catch (Throwable e) {
-                return null;
+                return new Hover();
             }
         });
     }
@@ -291,6 +291,24 @@ public class MalTextDocumentService implements TextDocumentService {
         });
     }
 
+    List<Location> findReferences(Symbol symbol) {
+        List<Location> locations = new ArrayList<>();
+        MALSymbolProvider symbolProvider = new MALSymbolProvider();
+        List<Symbol> symbols = symbolProvider.getSymbols(context.get(ContextKeys.AST_KEY));
+
+        for (Symbol s : symbols) {
+            if (s.getName().equals(symbol.getName())) {
+                locations.add(
+                        new Location(
+                                getDefinitionUri(
+                                        s.getLocation().getUri(), context.get(ContextKeys.URI_KEY)),
+                                s.getLocation().getRange()));
+            }
+        }
+
+        return locations;
+    }
+
     private Symbol getSymbol(Position cursorPosition, List<Symbol> symbols) {
         for (Symbol s : symbols) {
             // Check whether cursor position is within the range of the symbol
@@ -360,10 +378,49 @@ public class MalTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<WorkspaceEdit> rename(RenameParams renameParams) {
-        var newName = renameParams.getNewName();
-        // renameParams.
+         context.put(ContextKeys.URI_KEY, renameParams.getTextDocument().getUri());
 
-        return null;
+
+        // Get the Position of the symbol to be renamed
+        Position pos = renameParams.getPosition();
+
+        // Get the new name of the symbol
+        String newName = renameParams.getNewName();
+
+        // Find the symbol
+        MALSymbolProvider symbolProvider = new MALSymbolProvider();
+        List<Symbol> symbols = symbolProvider.getSymbols(context.get(ContextKeys.AST_KEY));
+
+        // Use the symbol to find all reference to it in the document
+        Symbol symbolAtCursor = getSymbol(pos, symbols);
+        List<Location> references = findReferences(symbolAtCursor);
+
+        // Create a WorkspaceEdit object to hold the changes
+        WorkspaceEdit edit = new WorkspaceEdit();
+
+        server.getClient().showMessage(new MessageParams(MessageType.Info, "References: " + references.size()));
+        StringBuilder sb = new StringBuilder();
+        references.forEach(r -> sb.append(r.getUri() + "\n" + r.getRange()));
+
+        server.getClient().showMessage(new MessageParams(MessageType.Info, sb.toString()));
+
+        server.getClient().showMessage(new MessageParams(MessageType.Info, "References: " + references.size()));
+        // For each reference, create a TextEdit object and add it to the WorkspaceEdit object
+        // TODO: Not sure if should include getDefinitionUri
+        for (Location referenceLocation : references) {
+            TextEdit textEdit = new TextEdit(referenceLocation.getRange(), newName);
+            List<TextEdit> textEdits = edit.getChanges().get(getDefinitionUri(referenceLocation.getUri(),
+                    context.get(ContextKeys.URI_KEY)));
+            if (textEdits == null) {
+                textEdits = new ArrayList<>();
+                edit.getChanges().put(
+                    getDefinitionUri(referenceLocation.getUri(), context.get(ContextKeys.URI_KEY)),
+                     textEdits);
+            }
+            textEdits.add(textEdit);
+        }
+
+        return CompletableFuture.completedFuture(edit);
     }
 
     @Override

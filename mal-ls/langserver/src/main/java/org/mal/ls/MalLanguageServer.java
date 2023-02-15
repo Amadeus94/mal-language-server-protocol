@@ -6,6 +6,7 @@ import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.ReferenceOptions;
+import org.eclipse.lsp4j.RenameOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -91,7 +92,7 @@ public class MalLanguageServer implements LanguageServer, LanguageClientAware {
     // Rename Options
     //RenameOptions renameOptions = new RenameOptions();
     //renameOptions.setPrepareProvider(true); // not sure if should include
-    //initializeResult.getCapabilities().setRenameProvider(renameOptions);
+    initializeResult.getCapabilities().setRenameProvider(true);
 
     // Register Hover
     initializeResult.getCapabilities().setHoverProvider(Either.forRight(ServerInitUtils.getHoverOptions()));
